@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp C:/Users/Diissiident/Desktop/claude-code-statusline/statusline.py C:/Users/Diissiident/.claude/statusline.py)",
+      "Read(//c/Users/Diissiident/.claude/**)"
+    ]
+  }
+}

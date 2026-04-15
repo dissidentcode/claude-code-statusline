@@ -199,6 +199,7 @@ def main() -> int:
         (model.get("display_name") or model.get("id") or "?")
         .removeprefix("Claude ")
         .replace(" context", "")
+        .replace(" ", "")
     )
 
     cwd = data.get("cwd") or (data.get("workspace") or {}).get("current_dir") or ""
@@ -223,10 +224,8 @@ def main() -> int:
     # assemble segments
     sep = wrap(" ▕ ", SEP_COLOR)
 
-    seg_model = (
-        wrap(model_name, BOLD, model_color(model_name))
-        + "  "
-        + wrap(effort, CYAN_BRIGHT)
+    seg_model = wrap(model_name, BOLD, model_color(model_name)) + wrap(
+        effort, CYAN_BRIGHT
     )
 
     seg_dir = wrap(dir_name, BOLD, WHITE)
