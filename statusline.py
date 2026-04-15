@@ -216,13 +216,13 @@ def main() -> int:
     reset_at = five_hour.get("resets_at")
     weekly_pct = seven_day.get("used_percentage")
 
-    session_name = data.get("session_name") or ""
+    session_label = data.get("session_name") or (data.get("session_id") or "")[:6]
 
     effort = load_effort()
     cols = int(os.environ.get("COLUMNS") or 200)
 
     # assemble segments
-    sep = wrap(" ▕ ", SEP_COLOR)
+    sep = wrap("▕ ", SEP_COLOR)
 
     seg_model = wrap(model_name, BOLD, model_color(model_name)) + wrap(
         effort, CYAN_BRIGHT
@@ -233,7 +233,7 @@ def main() -> int:
     if gi is not None:
         branch, dirty = gi
         git_str = f"⏇ {branch}{'*' if dirty else ''}"
-        seg_dir += "  " + wrap(git_str, GRAY)
+        seg_dir += " " + wrap(git_str, GRAY)
 
     bar, bar_color = render_bar(pct)
     seg_ctx = wrap(bar, bar_color) + " " + wrap(f"{pct:.0f}%", bar_color)
@@ -248,8 +248,8 @@ def main() -> int:
         seg_weekly = wrap(f"W{wp:.0f}%", pct_color(wp))
 
     seg_summary = None
-    if session_name:
-        seg_summary = wrap(f"❖ {session_name}", BOLD, SUMMARY)
+    if session_label:
+        seg_summary = wrap(f"❖ {session_label}", BOLD, SUMMARY)
 
     seg_tok = wrap(f"↓{fmt_tokens(in_tok)} ↑{fmt_tokens(out_tok)}", DIM_GRAY)
 

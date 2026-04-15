@@ -11,7 +11,7 @@ A polished, colorful status bar for [Claude Code](https://claude.com/claude-code
 - **16-block context bar** with partial-block fine fill and smart coloring (green ≤50%, yellow ≤75%, red >75%)
 - **Session reset countdown** — time until the next 5-hour window flips
 - **Weekly usage percentage** — same color rules as the context bar
-- **Session name** — the topic Claude Code assigned to the current session
+- **Session label** — your custom name (via `/rename` or `--name`), or the first 6 chars of the `session_id` as a fallback
 - **Input and output token counts** for the session
 - **Graceful narrow-terminal degradation** — drops segments right-to-left as the window shrinks
 - **Zero dependencies** — pure Python stdlib, one file

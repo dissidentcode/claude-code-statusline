@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(cp C:/Users/Diissiident/Desktop/claude-code-statusline/statusline.py C:/Users/Diissiident/.claude/statusline.py)",
-      "Read(//c/Users/Diissiident/.claude/**)"
+      "Read(//c/Users/Diissiident/.claude/**)",
+      "Bash(NO_COLOR=1 python3 C:/Users/Diissiident/.claude/statusline.py)",
+      "Skill(update-config)",
+      "Bash(python3 *)"
     ]
   }
 }
