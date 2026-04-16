@@ -6,9 +6,9 @@ context usage bar, the session-limit reset countdown, the weekly-limit
 percentage, the session name, and input/output token counts.
 
 Limitations:
-- Effort reflects the saved effortLevel in ~/.claude/settings.json. A live
-  /effort override is not in the stdin payload and will not be shown until
-  the override is persisted.
+- Effort: "max" is detected from the model's 1M context ID. Other levels
+  reflect the saved effortLevel in ~/.claude/settings.json; a live /effort
+  override (other than max) will not show until persisted.
 - Git info requires `git` on PATH and a 1.5s budget. Slow repos render as
   '⏇ git…'.
 - context_window.used_percentage excludes output tokens (per Claude Code docs).
@@ -67,7 +67,9 @@ def wrap(s: str, *codes: str) -> str:
 
 
 # --- data gathering ---
-def load_effort() -> str:
+def load_effort(model_id: str = "") -> str:
+    if "[1m]" in model_id:
+        return "max"
     try:
         data = json.loads(
             (Path.home() / ".claude" / "settings.json").read_text("utf-8")
@@ -218,7 +220,7 @@ def main() -> int:
 
     session_label = data.get("session_name") or (data.get("session_id") or "")[:6]
 
-    effort = load_effort()
+    effort = load_effort(model.get("id") or "")
     cols = int(os.environ.get("COLUMNS") or 200)
 
     # assemble segments
@@ -245,7 +247,14 @@ def main() -> int:
     seg_weekly = None
     if weekly_pct is not None:
         wp = float(weekly_pct)
-        seg_weekly = wrap(f"W{wp:.0f}%", pct_color(wp))
+        weekly_reset = seven_day.get("resets_at")
+        if weekly_reset is not None:
+            rst = time.localtime(float(weekly_reset))
+            seg_weekly = wrap(f"W{wp:.0f}%", pct_color(wp)) + wrap(
+                f" ◷ {rst.tm_mon}/{rst.tm_mday}", DIM_GRAY
+            )
+        else:
+            seg_weekly = wrap(f"W{wp:.0f}%", pct_color(wp))
 
     seg_summary = None
     if session_label:
