@@ -7,5 +7,6 @@
       "Skill(update-config)",
       "Bash(python3 *)"
     ]
-  }
+  },
+  "prefersReducedMotion": true
 }
