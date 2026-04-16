@@ -6,11 +6,11 @@ context usage bar, the session-limit reset countdown, the weekly-limit
 percentage, the session name, and input/output token counts.
 
 Limitations:
-- Effort: "max" is detected from the model's 1M context ID. Other levels
-  reflect the saved effortLevel in ~/.claude/settings.json; a live /effort
-  override (other than max) will not show until persisted.
-- Git info requires `git` on PATH and a 1.5s budget. Slow repos render as
-  '⏇ git…'.
+- Effort reflects the saved effortLevel in ~/.claude/settings.json. A live
+  /effort change only shows after the harness persists it.
+- Icons are Nerd Font glyphs — requires a Nerd Font-patched terminal font.
+- Git info requires `git` on PATH and a 1.5s budget. Slow repos render the
+  branch as 'git…'.
 - context_window.used_percentage excludes output tokens (per Claude Code docs).
 """
 
@@ -29,6 +29,15 @@ EMPTY = "░"
 GIT_TIMEOUT = 1.5
 CACHE_TTL = 2.0
 CACHE_FILE = Path.home() / ".claude" / "statusline-cache.json"
+
+# Nerd Font icons (require a Nerd Font-patched terminal font).
+ICON_MODEL = "\uf069"  # nf-fa-asterisk (proxy for Anthropic mark)
+ICON_FOLDER = "\uf07b"  # nf-fa-folder
+ICON_BRANCH = "\ue0a0"  # nf-pl-branch
+ICON_CLOCK = "\uf017"  # nf-fa-clock_o
+ICON_BOOKMARK = "\uf02e"  # nf-fa-bookmark_o
+ICON_ARROW_DOWN = "\uf063"  # nf-fa-arrow_down
+ICON_ARROW_UP = "\uf062"  # nf-fa-arrow_up
 
 
 # --- 256-color ANSI helpers ---
@@ -67,9 +76,7 @@ def wrap(s: str, *codes: str) -> str:
 
 
 # --- data gathering ---
-def load_effort(model_id: str = "") -> str:
-    if "[1m]" in model_id:
-        return "max"
+def load_effort() -> str:
     try:
         data = json.loads(
             (Path.home() / ".claude" / "settings.json").read_text("utf-8")
@@ -220,21 +227,24 @@ def main() -> int:
 
     session_label = data.get("session_name") or (data.get("session_id") or "")[:6]
 
-    effort = load_effort(model.get("id") or "")
+    effort = load_effort()
     cols = int(os.environ.get("COLUMNS") or 200)
 
     # assemble segments
     sep = wrap("▕ ", SEP_COLOR)
 
-    seg_model = wrap(model_name, BOLD, model_color(model_name)) + wrap(
-        effort, CYAN_BRIGHT
+    seg_model = (
+        wrap(ICON_MODEL, model_color(model_name))
+        + " "
+        + wrap(model_name, BOLD, model_color(model_name))
+        + wrap(effort, CYAN_BRIGHT)
     )
 
-    seg_dir = wrap(dir_name, BOLD, WHITE)
+    seg_dir = wrap(ICON_FOLDER, GRAY) + " " + wrap(dir_name, BOLD, WHITE)
     gi = git_info(cwd)
     if gi is not None:
         branch, dirty = gi
-        git_str = f"⏇ {branch}{'*' if dirty else ''}"
+        git_str = f"{ICON_BRANCH} {branch}{'*' if dirty else ''}"
         seg_dir += " " + wrap(git_str, GRAY)
 
     bar, bar_color = render_bar(pct)
@@ -242,7 +252,7 @@ def main() -> int:
 
     seg_reset = None
     if reset_at is not None:
-        seg_reset = wrap(f"◷ {fmt_countdown(float(reset_at))}", DIM_GRAY)
+        seg_reset = wrap(f"{ICON_CLOCK} {fmt_countdown(float(reset_at))}", DIM_GRAY)
 
     seg_weekly = None
     if weekly_pct is not None:
@@ -251,16 +261,19 @@ def main() -> int:
         if weekly_reset is not None:
             rst = time.localtime(float(weekly_reset))
             seg_weekly = wrap(f"W{wp:.0f}%", pct_color(wp)) + wrap(
-                f" ◷ {rst.tm_mon}/{rst.tm_mday}", DIM_GRAY
+                f" {ICON_CLOCK} {rst.tm_mon}/{rst.tm_mday}", DIM_GRAY
             )
         else:
             seg_weekly = wrap(f"W{wp:.0f}%", pct_color(wp))
 
     seg_summary = None
     if session_label:
-        seg_summary = wrap(f"❖ {session_label}", BOLD, SUMMARY)
+        seg_summary = wrap(f"{ICON_BOOKMARK} {session_label}", BOLD, SUMMARY)
 
-    seg_tok = wrap(f"↓{fmt_tokens(in_tok)} ↑{fmt_tokens(out_tok)}", DIM_GRAY)
+    seg_tok = wrap(
+        f"{ICON_ARROW_DOWN} {fmt_tokens(in_tok)} {ICON_ARROW_UP} {fmt_tokens(out_tok)}",
+        DIM_GRAY,
+    )
 
     # Order: model, dir, bar, reset countdown, weekly %, session summary, tokens
     parts = [seg_model, seg_dir, seg_ctx]

@@ -6,8 +6,8 @@ A polished, colorful status bar for [Claude Code](https://claude.com/claude-code
 
 ## Features
 
-- **Model and effort level**, colored by family (Opus magenta, Sonnet cyan, Haiku amber)
-- **Directory and git branch** with a dirty indicator
+- **Model and effort level**, colored by family (Opus magenta, Sonnet cyan, Haiku amber), prefixed with an Anthropic-style asterisk mark
+- **Directory and git branch** with a dirty indicator, each tagged with a Nerd Font icon
 - **16-block context bar** with partial-block fine fill and smart coloring (green ≤50%, yellow ≤75%, red >75%)
 - **Session reset countdown** — time until the next 5-hour window flips
 - **Weekly usage percentage** — same color rules as the context bar
@@ -40,7 +40,7 @@ Re-running the installer is safe — it's idempotent.
 - **Claude Code** — [install instructions](https://claude.com/claude-code)
 - **Python 3.8+** on your `PATH`
 - **git** (optional) — only needed if you want the branch segment to show anything
-- A terminal with a font that supports Unicode block and partial-block glyphs. Known-working fonts: **Cascadia Code**, **JetBrains Mono**, **Fira Code**, any **Nerd Font**. Windows Terminal, iTerm2, Alacritty, Kitty, and Wezterm all render correctly.
+- A **[Nerd Font](https://www.nerdfonts.com/)**-patched terminal font. The status bar uses Nerd Font glyphs for the model, folder, branch, clock, session, and token arrows — without one, those positions render as tofu (□). Any Nerd Font works: **JetBrainsMono Nerd Font**, **FiraCode Nerd Font**, **CaskaydiaCove Nerd Font**, etc. Windows Terminal, iTerm2, Alacritty, Kitty, and Wezterm all render correctly once the font is set.
 
 ## Uninstall
 
@@ -76,7 +76,8 @@ If the install script doesn't work for you, here are the two steps it does:
 - **Colors**: the `c256(...)` constants near the top. [256-color chart](https://www.ditig.com/256-colors-cheat-sheet)
 - **Bar width**: change `BAR_WIDTH` (default 16)
 - **Bar glyphs**: swap `FULL`, `EMPTY`, `PARTIALS` for any other block characters
-- **Segment glyphs**: `⏇` (git), `◷` (reset), `❖` (session name), `▕` (separator) — swap for anything your font likes
+- **Icons**: the `ICON_*` constants near the top hold each Nerd Font codepoint — `ICON_MODEL` (asterisk), `ICON_FOLDER`, `ICON_BRANCH`, `ICON_CLOCK`, `ICON_BOOKMARK`, `ICON_ARROW_DOWN`, `ICON_ARROW_UP`. Browse the [Nerd Font cheat sheet](https://www.nerdfonts.com/cheat-sheet) and drop in a new `\uXXXX` escape
+- **Separator**: `▕` is still a plain Unicode block glyph — swap for anything your font likes
 - **Segments**: comment out any `parts.append(...)` line inside `main()` to hide a segment
 - **Thresholds**: edit `pct_color()` to change where green → yellow → red
 
@@ -88,7 +89,7 @@ After editing, restart Claude Code or type `/hooks` to reload.
 Type `/hooks` in Claude Code to reload the config, or restart the app. Sessions that were open before the install don't automatically pick up the new `statusLine` entry.
 
 **Squares or "tofu" instead of glyphs**
-Your terminal font doesn't have those Unicode characters. Install JetBrains Mono, Cascadia Code, Fira Code, or any Nerd Font, and set your terminal to use it.
+Your terminal font isn't a Nerd Font. The icons live in the Unicode Private Use Area, so only Nerd Font-patched builds have them. Grab any build from [nerdfonts.com](https://www.nerdfonts.com/font-downloads) — the "Mono" variants (e.g. JetBrainsMono Nerd Font Mono) work best in terminals. Set it as your terminal's font and the glyphs will render.
 
 **The model color looks wrong / one color for everything**
 Your terminal might not support 256-color mode. Most modern ones do. If yours doesn't, set `NO_COLOR=1` in your environment to fall back to plain text.
