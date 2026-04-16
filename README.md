@@ -111,4 +111,4 @@ The full payload schema and documentation: https://code.claude.com/docs/en/statu
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — do what you want 
