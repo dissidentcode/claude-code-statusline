@@ -2,8 +2,9 @@
 """Uninstall the Claude Code status line.
 
 Removes the statusLine key from settings.json and deletes
-~/.claude/statusline.py. Leaves settings.json.bak in place in case you
-want to restore anything else by hand.
+~/.claude/statusline.py (or the $CLAUDE_CONFIG_DIR equivalents). Any
+timestamped settings.json.bak.* backups are left in place in case you want
+to restore anything else by hand.
 """
 
 import json
@@ -39,8 +40,11 @@ def main() -> int:
         if isinstance(settings, dict) and "statusLine" in settings:
             del settings["statusLine"]
             tmp = settings_path.with_suffix(".json.tmp")
-            tmp.write_text(json.dumps(settings, indent=2), encoding="utf-8")
-            tmp.replace(settings_path)
+            try:
+                tmp.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
+                tmp.replace(settings_path)
+            except Exception as e:
+                fail(f"could not write {settings_path}: {e}")
             removed_key = True
 
     removed_script = False
@@ -56,6 +60,12 @@ def main() -> int:
             cache_path.unlink()
         except Exception:
             pass
+    # Sweep any orphaned atomic-write temp files (statusline-cache.<pid>.tmp)
+    for stale in config.glob("statusline-cache.*.tmp"):
+        try:
+            stale.unlink()
+        except Exception:
+            pass
 
     if not removed_key and not removed_script:
         print("Nothing to uninstall — status line was not installed.")
@@ -66,9 +76,9 @@ def main() -> int:
         print(f"  removed statusLine key from {settings_path}")
     if removed_script:
         print(f"  deleted {script_path}")
-    backup = config / "settings.json.bak"
-    if backup.exists():
-        print(f"  backup still at {backup}")
+    backups = sorted(config.glob("settings.json.bak*"))
+    if backups:
+        print(f"  settings backups kept: {len(backups)} (latest: {backups[-1]})")
     print()
     print("Restart Claude Code, or type /hooks to reload the config.")
     return 0

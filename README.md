@@ -6,7 +6,7 @@ A polished, colorful status bar for [Claude Code](https://claude.com/claude-code
 
 ## Features
 
-- **Model and effort level**, colored by family (Opus magenta, Sonnet cyan, Haiku amber), prefixed with an Anthropic-style asterisk mark
+- **Model and effort level**, colored by family (Opus magenta, Sonnet cyan, Haiku amber), prefixed with an Anthropic-style asterisk mark. Effort is read live from the status line payload, so mid-session `/effort` changes — including session-only `max` — show immediately; `ultracode` (which officially reports as `xhigh`) is detected from the session transcript and labeled by name
 - **Directory and git branch** with a dirty indicator, each tagged with a Nerd Font icon
 - **16-block context bar** with partial-block fine fill and smart coloring (green ≤50%, yellow ≤75%, red >75%)
 - **Session reset countdown** — time until the next 5-hour window flips
@@ -30,15 +30,17 @@ That's it. Restart Claude Code, or type `/hooks` inside a session to reload the 
 
 The installer:
 1. Copies `statusline.py` to `~/.claude/statusline.py`
-2. Backs up `~/.claude/settings.json` to `settings.json.bak`
+2. Backs up `~/.claude/settings.json` to a timestamped `settings.json.bak.<stamp>` (byte-for-byte copy; skipped on a fresh install where no settings.json exists yet)
 3. Adds a `statusLine` entry pointing at the installed script
 
-Re-running the installer is safe — it's idempotent.
+Re-running the installer is safe — it's idempotent, and each run writes a fresh backup instead of overwriting the previous one. The Python that runs `install.py` is the one wired into `settings.json`, so run it with the interpreter you want the status line to use (and not one inside a virtualenv you might delete).
+
+All paths honor `$CLAUDE_CONFIG_DIR` if you've moved your Claude Code config out of `~/.claude` — the installer, uninstaller, status line script, and its git cache all resolve the same directory.
 
 ## Requirements
 
 - **Claude Code** — [install instructions](https://claude.com/claude-code)
-- **Python 3.8+** on your `PATH`
+- **Python 3.9+** on your `PATH` (macOS note: the system `/usr/bin/python3` is 3.9.6, which works; `install.py` refuses anything older than 3.9)
 - **git** (optional) — only needed if you want the branch segment to show anything
 - A **[Nerd Font](https://www.nerdfonts.com/)**-patched terminal font. The status bar uses Nerd Font glyphs for the model, folder, branch, clock, session, and token arrows — without one, those positions render as tofu (□). Any Nerd Font works: **JetBrainsMono Nerd Font**, **FiraCode Nerd Font**, **CaskaydiaCove Nerd Font**, etc. Windows Terminal, iTerm2, Alacritty, Kitty, and Wezterm all render correctly once the font is set.
 
@@ -48,11 +50,11 @@ Re-running the installer is safe — it's idempotent.
 python uninstall.py
 ```
 
-Removes the `statusLine` key from `settings.json`, deletes `~/.claude/statusline.py`, and clears the git cache. Your `settings.json.bak` is left in place so you can restore anything else if you need to.
+Removes the `statusLine` key from `settings.json`, deletes `~/.claude/statusline.py`, and clears the git cache. Your timestamped `settings.json.bak.*` backups are left in place so you can restore anything else if you need to.
 
 ## Manual install
 
-If the install script doesn't work for you, here are the two steps it does:
+If the install script doesn't work for you, here are the steps it does:
 
 1. Copy `statusline.py` to `~/.claude/statusline.py` (or `%USERPROFILE%\.claude\statusline.py` on Windows)
 2. Open `~/.claude/settings.json` in a text editor and merge this top-level key (don't replace the file — add it alongside what's already there):
@@ -78,7 +80,7 @@ If the install script doesn't work for you, here are the two steps it does:
 - **Bar glyphs**: swap `FULL`, `EMPTY`, `PARTIALS` for any other block characters
 - **Icons**: the `ICON_*` constants near the top hold each Nerd Font codepoint — `ICON_MODEL` (asterisk), `ICON_FOLDER`, `ICON_BRANCH`, `ICON_CLOCK`, `ICON_BOOKMARK`, `ICON_ARROW_DOWN`, `ICON_ARROW_UP`. Browse the [Nerd Font cheat sheet](https://www.nerdfonts.com/cheat-sheet) and drop in a new `\uXXXX` escape
 - **Separator**: `▕` is still a plain Unicode block glyph — swap for anything your font likes
-- **Segments**: comment out any `parts.append(...)` line inside `main()` to hide a segment
+- **Segments**: comment out any `parts.append(...)` line inside `render()` to hide a segment (the first three — model, directory, context bar — live in the `parts = [...]` list literal just above them)
 - **Thresholds**: edit `pct_color()` to change where green → yellow → red
 
 After editing, restart Claude Code or type `/hooks` to reload.
@@ -97,8 +99,11 @@ Your terminal might not support 256-color mode. Most modern ones do. If yours do
 **`python` isn't found on Windows**
 If you installed Python from the Microsoft Store, `python` may be a stub that doesn't work. Install Python from [python.org](https://www.python.org/downloads/) with "Add Python to PATH" checked, or use [scoop](https://scoop.sh): `scoop install python`.
 
-**The effort level shown is wrong after I ran `/effort`**
-The effort shown is the saved value in `settings.json`. A session-only `/effort` override isn't in the data Claude Code passes to the status line, so the bar keeps showing the saved value until you restart.
+**The effort level doesn't show at all**
+Either your Claude Code version predates the `effort` field in the status line payload, or the current model doesn't support the effort parameter. The suffix is hidden rather than guessed.
+
+**`/effort ultracode` shows as `xhigh`**
+Officially, ultracode *is* xhigh (plus dynamic workflow orchestration) and the payload reports it that way. The script tails the session transcript to relabel it `ultracode`; that parse is best-effort against an undocumented format, so when it misses you see `xhigh` — which is still accurate.
 
 **Git branch shows "git…"**
 Your repo is big enough that the 1.5-second git timeout expired. Open `statusline.py` and bump `GIT_TIMEOUT`.
